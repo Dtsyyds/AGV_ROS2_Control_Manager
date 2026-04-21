@@ -1,0 +1,53 @@
+# 路径规划服务请求
+
+# 彩色图像 (sensor_msgs/Image)
+sensor_msgs/Image color_image
+
+# 深度图像 (sensor_msgs/Image)
+sensor_msgs/Image depth_image
+
+# 点击点坐标（像素坐标）
+# 如果 x < 0 且 y < 0，则使用交互模式（弹窗选择）
+# 如果 x >= 0 且 y >= 0，则使用指定点击点
+int32 click_x
+int32 click_y
+
+# 是否自动使用图像中心
+bool auto_center
+
+# 是否启用可视化（cv2窗口）
+bool enable_visualization
+
+# 扫描模式: "Long" 或 "Short"
+string scan_mode
+
+# 步进间隔（像素）
+int32 spacing
+
+# 掩码收缩因子（像素）
+int32 shrink_factor
+
+---
+
+# 路径规划服务响应
+
+# 是否成功
+bool success
+
+# 状态信息
+string message
+
+# 3D路径点 (sensor_msgs/PointCloud2)
+sensor_msgs/PointCloud2 path_3d
+
+# 2D路径点 (像素坐标)
+geometry_msgs/Point[] path_2d
+
+# 局部坐标系 (PoseArray)
+geometry_msgs/PoseArray local_frames
+
+# 注意力热力图
+sensor_msgs/Image attention_map
+
+# 路径点数量
+int32 num_points

@@ -1,0 +1,12 @@
+# --- 编译产物 (ROS 2) ---
+build/
+install/
+log/
+.vscode/
+logs/
+_rokae_log_/
+__pycache__/
+# --- 通用临时文件 ---
+*.log              # 所有日志文件
+*.tmp              # 所有临时文件
+*.pt
