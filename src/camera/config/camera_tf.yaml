@@ -1,0 +1,24 @@
+# 相机 TF 配置
+# 描述相机相对于机械臂末端 (arm1_tool_link) 的位姿
+# 标定结果来自 moveit_calibration (Eye-in-Hand)
+
+astraS_camera:
+  ros__parameters:
+    # 父坐标系：机械臂末端关节
+    parent_frame_id: "arm2_tool_link"
+
+    # 子坐标系：相机
+    color_frame_id: "camera_color_frame"
+    depth_frame_id: "camera_depth_frame"
+
+    # 相机位置 [x, y, z]（单位：米）
+    # 标定结果：根据 H_Camera2Gripper 矩阵，单位转换为米
+    tf_translation: [-0.02387625563651477, -0.21528082955053, 0.1417563668616137]
+
+    # 相机姿态 [qx, qy, qz, qw]（四元数）
+    # 标定结果：根据 H_Camera2Gripper 矩阵计算的四元数
+    tf_rotation: [-0.7471245924757696, 0.001092551759065305, -0.006055558078383331, 0.6646555347433197]
+
+    # 旧默认值（标定前使用）：
+    # tf_translation: [0.05, 0.0, 0.05]
+    # tf_rotation: [0.0, 0.0, 0.0, 1.0]

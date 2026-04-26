@@ -1,0 +1,9 @@
+pathplanner_ros2_node:
+  ros__parameters:
+    scan_mode: "Short"
+    spacing: 15
+    shrink_factor: 10
+    interactive_mode: false
+    enable_visualization: false
+
+
