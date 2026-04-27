@@ -6,14 +6,16 @@
 
 namespace agv_hardware {
 
-hardware_interface::CallbackReturn AgvHardwareInterface::on_init(
-    const hardware_interface::HardwareComponentInterfaceParams & params)
+hardware_interface::CallbackReturn AgvHardwareInterface::on_init
+    (const hardware_interface::HardwareInfo & info)
 {
-    if (hardware_interface::SystemInterface::on_init(params) !=
+    if (hardware_interface::SystemInterface::on_init(info) !=
         hardware_interface::CallbackReturn::SUCCESS)
     {
         return hardware_interface::CallbackReturn::ERROR;
     }
+
+    info_ = info;
     
     config_ = AgvConfig();
     robot_controller_ = std::make_unique<RobotController>(config_);
@@ -22,7 +24,9 @@ hardware_interface::CallbackReturn AgvHardwareInterface::on_init(
         config_.server_uri,
         config_.reconnect_interval_ms
     );
-
+    agv_ = std::make_unique<AGVRobotMove>();
+    agvIP = "192.168.1.109";
+    agv_->init(agvIP);
     ws_server_ = std::make_unique<agv_protocol::WebSocketServerWrapper>(config_.local_server_port);
     
     // 统一指令处理器
@@ -116,6 +120,7 @@ hardware_interface::CallbackReturn AgvHardwareInterface::on_init(
                 }
             }
         });
+    
     
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -327,6 +332,10 @@ void AgvHardwareInterface::handleCommand(const std::string& json_str)
             cmd.chassis_velocity[1],
             cmd.chassis_velocity[2]
         );
+        double vx = cmd.chassis_velocity[0];
+        double vy = cmd.chassis_velocity[1];
+        double wz = cmd.chassis_velocity[2];
+        agv_->setVelocity(vx, vy, wz);
     }
 }
 

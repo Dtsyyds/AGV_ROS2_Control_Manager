@@ -42,6 +42,7 @@ add_library(
   SHARED
   src/agv_hardware_interface.cpp
   src/robot_controller.cpp
+  include/cJSON.c
 )
 
 # 添加编译定义

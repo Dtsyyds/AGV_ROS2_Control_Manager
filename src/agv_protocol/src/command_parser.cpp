@@ -102,9 +102,11 @@ bool CommandParser::parsePayload(const Json::Value& payload, CommandData& cmd)
         parseArmCommands(payload["arms"], cmd.arm_commands);
     }
 
-    // 3. 解析底盘命令
+    // 3. 解析底盘命令 (支持 "chassis" 或 "agv" 格式)
     if (payload.isMember("chassis")) {
         parseChassisCommand(payload["chassis"], cmd);
+    } else if (payload.isMember("agv")) {
+        parseAgvCommand(payload["agv"], cmd);
     }
 
     // 4. 解析相机命令
@@ -176,6 +178,26 @@ bool CommandParser::parseChassisCommand(const Json::Value& chassis, CommandData&
             cmd.chassis_velocity[2] = params.isMember("wz") ? safeGetDouble(params, "wz") : safeGetDouble(params, "yaw");
             cmd.has_chassis_command = true;
         }
+    }
+    return true;
+}
+
+bool CommandParser::parseAgvCommand(const Json::Value& agv, CommandData& cmd)
+{
+    if (!agv.isObject()) return false;
+    
+    std::string command = safeGetString(agv, "command");
+    const Json::Value& data = agv["data"];
+    
+    if (command == "move" && data.isObject()) {
+        // 解析速度参数
+        cmd.chassis_velocity[0] = data.isMember("vx") ? safeGetDouble(data, "vx") : 0.0;
+        cmd.chassis_velocity[1] = data.isMember("vy") ? safeGetDouble(data, "vy") : 0.0;
+        cmd.chassis_velocity[2] = data.isMember("wz") ? safeGetDouble(data, "wz") : 0.0;
+        cmd.has_chassis_command = true;
+        std::cout << "[CommandParser] 解析AGV命令: vx=" << cmd.chassis_velocity[0] 
+                  << ", vy=" << cmd.chassis_velocity[1] 
+                  << ", wz=" << cmd.chassis_velocity[2] << std::endl;
     }
     return true;
 }

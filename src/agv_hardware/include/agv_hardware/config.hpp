@@ -12,17 +12,17 @@ namespace agv_hardware {
 struct AgvConfig {
     // ==================== 机器人网络配置 ====================
     /// @brief 机器人控制器 IP 地址
-    std::string robot_ip = "192.168.1.159";
+    std::string robot_ip = "192.168.1.158";
     
     /// @brief 底盘控制 IP 地址
-    std::string chassis_ip = "192.168.1.109";
+    std::string chassis_ip = "192.168.1.100";
     
     /// @brief 本地控制机 IP 地址
     std::string local_ip = "192.168.1.100";
     
     // ==================== WebSocket 配置 ====================
     /// @brief 上位机 WebSocket 服务器 URI
-    std::string server_uri = "ws://192.168.3.104:9100";
+    std::string server_uri = "ws://192.168.1.108:9100";
     
     /// @brief 本地 WebSocket 服务器端口（用于接收本地控制指令）
     int local_server_port = 9001;

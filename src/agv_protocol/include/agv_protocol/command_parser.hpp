@@ -184,6 +184,14 @@ private:
     bool parseChassisCommand(const Json::Value& chassis, CommandData& cmd);
 
     /**
+     * @brief 解析AGV命令（新格式）
+     * @param agv JSON 对象
+     * @param cmd 输出命令数据
+     * @return 解析是否成功
+     */
+    bool parseAgvCommand(const Json::Value& agv, CommandData& cmd);
+
+    /**
      * @brief 解析相机命令
      * @param camera JSON 对象
      * @param cmd 输出命令数据数据

@@ -26,6 +26,8 @@
 #include <mutex>
 #include <string>
 
+#include "robot_gotarget.hpp"
+
 namespace agv_hardware {
 
 /**
@@ -50,7 +52,7 @@ public:
 
     /// @brief 硬件接口初始化回调
     hardware_interface::CallbackReturn
-        on_init(const hardware_interface::HardwareComponentInterfaceParams & params) override;
+        on_init(const hardware_interface::HardwareInfo & params) override;
     
     /// @brief 读取硬件状态
     hardware_interface::return_type
@@ -102,6 +104,8 @@ private:
     std::unique_ptr<agv_protocol::WebSocketClientWrapper> ws_client_;        ///< WebSocket 客户端
     std::unique_ptr<agv_protocol::WebSocketServerWrapper> ws_server_;        ///< 本地 WebSocket 服务器
     agv_protocol::CommandParser command_parser_;                  ///< 命令解析器
+    std::unique_ptr<AGVRobotMove> agv_;
+    std::string agvIP;
 
     // ==================== 状态数据 ====================
     bool enable_status_report_ = false;  // 是否允许回传状态数据

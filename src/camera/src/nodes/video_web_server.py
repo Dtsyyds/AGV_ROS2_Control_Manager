@@ -80,7 +80,7 @@ def main():
     # 5. 设置 daemon=True，这样主程序退出时 Flask 线程也会自动退出
     flask_thread = threading.Thread(
         target=app.run,
-        kwargs={'host': '0.0.0.0', 'port': 5000, 'threaded': True, 'use_reloader': False},
+        kwargs={'host': '192.168.1.103', 'port': 5000, 'threaded': True, 'use_reloader': False},
         daemon=True
     )
     flask_thread.start()
