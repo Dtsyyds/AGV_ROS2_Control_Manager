@@ -72,14 +72,9 @@ class PathVisualizer:
         if save:
             cv2.imwrite(os.path.join(self.dir,'result/image_with_path.png'), image_with_path)
         
-        # 显示结果
-        if show:
-            cv2.imshow("Contour-based Scan Path", image_with_path)
-            if threading.current_thread() is threading.main_thread():
-                cv2.waitKey(500)
-            else:
-                cv2.waitKey(1)
-            cv2.destroyWindow("Contour-based Scan Path")
+        result_dir = os.path.expanduser("~/pathplanner_result")
+        os.makedirs(result_dir, exist_ok=True)
+        cv2.imwrite(os.path.join(result_dir, "image_with_path.png"), image_with_path)
         
         return image_with_path
     
@@ -172,115 +167,103 @@ class PathVisualizer:
             )
             geometries.append(path_pcd)
 
-            if  local_frames:
+            if local_frames:
                 coord_axes = o3d.geometry.TriangleMesh()
                 for frame in local_frames:
                     origin = np.array(frame['origin'])
-                    x_axis = np.array(frame['x_axis']) * 5.0  # 缩放箭头长度（单位：mm，按需调整）
+                    x_axis = np.array(frame['x_axis']) * 5.0
                     y_axis = np.array(frame['y_axis']) * 5.0
                     z_axis = np.array(frame['z_axis']) * 5.0
 
-                    # 创建坐标轴箭头（用 LineSet 或 create_arrow 更精确，这里用小圆柱近似示意）
-                    # 方案：为每个轴创建一个小箭头（三角形网格）
                     for axis_vec, color in zip([x_axis, y_axis, z_axis], [[1, 0, 0], [0, 1, 0], [0, 0, 1]]):
-                        # 创建从 origin 指向 origin+axis_vec 的箭头
                         arrow = o3d.geometry.TriangleMesh.create_arrow(
-                            cylinder_radius=0.3,  # 箭杆半径
-                            cone_radius=0.6,  # 箭头半径
+                            cylinder_radius=0.3,
+                            cone_radius=0.6,
                             cylinder_height=np.linalg.norm(axis_vec) * 0.8,
                             cone_height=np.linalg.norm(axis_vec) * 0.2,
                             resolution=4,
                             cylinder_split=1,
                             cone_split=1
                         )
-                        # 旋转 + 平移
-                        # 计算旋转：从 [0,0,1] → axis_vec 方向
-
                         R = utils.rotation_matrix_from_z_to_v(axis_vec)
                         arrow.rotate(R, center=[0, 0, 0])
                         arrow.translate(origin)
-
                         arrow.paint_uniform_color(color)
                         coord_axes += arrow
                 geometries.append(coord_axes)
-            # >>> 新增：首尾点用球体高亮 <<<
+
+            # 首尾点用球体高亮
             if len(scan_points_3d) >= 1:
                 start_point = scan_points_3d[0]
                 end_point = scan_points_3d[-1]
 
-                # 起点：红色大球
-                start_sphere = o3d.geometry.TriangleMesh.create_sphere(radius=2)  # 半径可调
+                start_sphere = o3d.geometry.TriangleMesh.create_sphere(radius=2)
                 start_sphere.translate(start_point)
-                start_sphere.paint_uniform_color([1.0, 0.0, 0.0])  # 红色
+                start_sphere.paint_uniform_color([1.0, 0.0, 0.0])
                 geometries.append(start_sphere)
 
-                # 终点：蓝色大球
                 end_sphere = o3d.geometry.TriangleMesh.create_sphere(radius=2)
                 end_sphere.translate(end_point)
-                end_sphere.paint_uniform_color([0.0, 0.0, 1.0])  # 蓝色
+                end_sphere.paint_uniform_color([0.0, 0.0, 1.0])
                 geometries.append(end_sphere)
 
                 print(f"🎯 起点/终点已高亮：红色球（起点）→ 蓝色球（终点）")
 
-            # 2. 创建连线（LineSet）
+            # 创建连线（转换为圆柱体以便合并保存）
             if len(scan_points_3d) > 1:
                 lines = [[i, i + 1] for i in range(len(scan_points_3d) - 1)]
-                colors = [[1.0, 0.0, 0.0] for _ in lines]  # 橙色线
-                line_set = o3d.geometry.LineSet()
-                line_set.points = o3d.utility.Vector3dVector(scan_points_3d)
-                line_set.lines = o3d.utility.Vector2iVector(lines)
-                line_set.colors = o3d.utility.Vector3dVector(colors)
-                geometries.append(line_set)
+                line_mesh = o3d.geometry.TriangleMesh()
+                for line in lines:
+                    pt1 = scan_points_3d[line[0]]
+                    pt2 = scan_points_3d[line[1]]
+                    # 计算圆柱体参数
+                    vec = pt2 - pt1
+                    height = np.linalg.norm(vec)
+                    if height < 1e-6:
+                        continue
+                    # 创建圆柱体
+                    cylinder = o3d.geometry.TriangleMesh.create_cylinder(
+                        radius=0.15,  # 线宽
+                        height=height,
+                        resolution=8,
+                        split=1
+                    )
+                    # 计算旋转矩阵：使圆柱体从 [0,0,1] 方向对齐到 vec 方向
+                    z_axis = np.array([0, 0, 1])
+                    vec_normalized = vec / height
+                    v = np.cross(z_axis, vec_normalized)
+                    s = np.linalg.norm(v)
+                    if s > 1e-6:
+                        c = np.dot(z_axis, vec_normalized)
+                        vx = np.array([[0, -v[2], v[1]],
+                                       [v[2], 0, -v[0]],
+                                       [-v[1], v[0], 0]])
+                        R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s * s))
+                        cylinder.rotate(R, center=[0, 0, 0])
+                    # 平移到线段中点
+                    mid_point = (pt1 + pt2) / 2
+                    cylinder.translate(mid_point)
+                    cylinder.paint_uniform_color([1.0, 0.0, 0.0])  # 红色
+                    line_mesh += cylinder
+                geometries.append(line_mesh)
+                print(f"✅ 已添加 {len(scan_points_3d)} 个路径点及 {len(lines)} 条连线（圆柱体）")
 
-            print(f"✅ 已添加 {len(scan_points_3d)} 个路径点及 {len(lines) if len(scan_points_3d) > 1 else 0} 条连线")
+        # 保存所有几何体到一个 PLY 文件
+        result_dir = os.path.expanduser("~/pathplanner_result")
+        os.makedirs(result_dir, exist_ok=True)
+        output_path = os.path.join(result_dir, "path_with_frames.ply")
 
-        # 创建可视化窗口
-        vis = o3d.visualization.Visualizer()
-        vis.create_window(window_name="彩色点云", width=1024, height=768)
-
-        # 添加所有几何体
+        # 合并所有几何体
+        combined_mesh = o3d.geometry.TriangleMesh()
         for geom in geometries:
-            vis.add_geometry(geom)
+            if isinstance(geom, o3d.geometry.TriangleMesh):
+                combined_mesh += geom
+            elif isinstance(geom, o3d.geometry.PointCloud):
+                # 点云转换为 mesh 以便合并
+                combined_mesh += geom
 
-        # 设置渲染选项
-        opt = vis.get_render_option()
-        opt.background_color = np.array([1.0,0.8,1.0])  # 深灰色背景
-        opt.point_size = 2.0  # 点的大小
-        opt.show_coordinate_frame = False  # 显示坐标系
-        opt.point_show_normal = True
-
-        # 设置视角
-        ctr = vis.get_view_control()
-
-        # 计算点云中心
-        if len(pointcloud) > 0:
-            center = np.mean(pointcloud, axis=0)
-            print(f"🎯 点云中心: {center}")
-
-            # 自动设置合适的视角
-            max_bound = np.max(pointcloud, axis=0)
-            min_bound = np.min(pointcloud, axis=0)
-            size = np.max(max_bound - min_bound)
-
-            # 设置视角位置
-            ctr.set_lookat(center)
-            ctr.set_front([0, 0, -1])  # 调整视角方向
-            ctr.set_up([0, -1, 0])
-            ctr.set_zoom(size)
-
-        # 添加说明文本
-        print("\n📌 点云可视化控制:")
-        print("  鼠标左键: 旋转视角")
-        print("  鼠标右键: 平移视角")
-        print("  鼠标滚轮: 缩放")
-        print("  R: 重置视角")
-        print("  C: 切换背景颜色")
-        print("  P: 保存当前视角截图")
-        print("  Q/ESC: 退出")
-
-        # 运行可视化
-        vis.run()
-        vis.destroy_window()
+        o3d.io.write_triangle_mesh(output_path, combined_mesh)
+        print(f"✅ 路径几何体已保存到: {output_path}")
 
 
     def draw_edge_on_mask(self, maskroi, current_mask, target_color=(0, 255, 0)):

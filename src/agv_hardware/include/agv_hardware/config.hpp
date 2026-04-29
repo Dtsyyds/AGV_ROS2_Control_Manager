@@ -15,7 +15,7 @@ struct AgvConfig {
     std::string robot_ip = "192.168.1.158";
     
     /// @brief 底盘控制 IP 地址
-    std::string chassis_ip = "192.168.1.100";
+    std::string chassis_ip = "192.168.1.109";
     
     /// @brief 本地控制机 IP 地址
     std::string local_ip = "192.168.1.100";

@@ -55,7 +55,7 @@ class PathPlannerROS2Node(Node):
                 ('cx', 314.3019441792476),
                 ('cy', 225.6695918834769),
                 ('model_path', ''),
-                ('enable_visualization', True),
+                ('enable_visualization', False),
                 ('interactive_mode', False),  # 是否启用交互模式
             ]
         )
