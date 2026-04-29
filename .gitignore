@@ -10,3 +10,4 @@ __pycache__/
 *.log              # 所有日志文件
 *.tmp              # 所有临时文件
 *.pt
+.trae/
