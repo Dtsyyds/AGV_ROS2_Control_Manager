@@ -248,22 +248,31 @@ class PathVisualizer:
                 geometries.append(line_mesh)
                 print(f"✅ 已添加 {len(scan_points_3d)} 个路径点及 {len(lines)} 条连线（圆柱体）")
 
-        # 保存所有几何体到一个 PLY 文件
+        # 保存所有几何体到 PLY 文件（分开保存 PointCloud 和 TriangleMesh）
         result_dir = os.path.expanduser("~/pathplanner_result")
         os.makedirs(result_dir, exist_ok=True)
-        output_path = os.path.join(result_dir, "path_with_frames.ply")
 
-        # 合并所有几何体
-        combined_mesh = o3d.geometry.TriangleMesh()
-        for geom in geometries:
-            if isinstance(geom, o3d.geometry.TriangleMesh):
-                combined_mesh += geom
-            elif isinstance(geom, o3d.geometry.PointCloud):
-                # 点云转换为 mesh 以便合并
-                combined_mesh += geom
+        # 分离 TriangleMesh 和 PointCloud
+        mesh_geometries = [g for g in geometries if isinstance(g, o3d.geometry.TriangleMesh)]
+        pcd_geometries = [g for g in geometries if isinstance(g, o3d.geometry.PointCloud)]
 
-        o3d.io.write_triangle_mesh(output_path, combined_mesh)
-        print(f"✅ 路径几何体已保存到: {output_path}")
+        # 保存 TriangleMesh（坐标系箭头、球体、连线圆柱体）
+        if mesh_geometries:
+            combined_mesh = o3d.geometry.TriangleMesh()
+            for geom in mesh_geometries:
+                combined_mesh += geom
+            mesh_path = os.path.join(result_dir, "path_meshes.ply")
+            o3d.io.write_triangle_mesh(mesh_path, combined_mesh)
+            print(f"✅ Mesh（坐标系/球体/连线）已保存到: {mesh_path}")
+
+        # 保存 PointCloud（点云、路径点）
+        if pcd_geometries:
+            combined_pcd = o3d.geometry.PointCloud()
+            for geom in pcd_geometries:
+                combined_pcd += geom
+            pcd_path = os.path.join(result_dir, "path_pointclouds.ply")
+            o3d.io.write_point_cloud(pcd_path, combined_pcd)
+            print(f"✅ PointCloud（点云/路径点）已保存到: {pcd_path}")
 
 
     def draw_edge_on_mask(self, maskroi, current_mask, target_color=(0, 255, 0)):

@@ -11,8 +11,10 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', [
-            'launch/pathplanner_launch.py',
             'launch/ros2_pathplanner_launch.py',
+        ]),
+        ('share/' + package_name + '/config', [
+            '../config/params.yaml',
         ]),
     ],
     install_requires=['setuptools', 'numpy', 'opencv-python', 'open3d', 'scipy', 'rclpy', 'sensor_msgs', 'cv_bridge'],

@@ -1,3 +1,5 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
@@ -11,6 +13,13 @@ def generate_launch_description():
     1. topic模式: 通过发布点击点话题触发分割
     2. auto模式: 自动使用图像中心作为分割点
     """
+    
+    # 获取参数文件路径（从包的 share 目录）
+    params_file = os.path.join(
+        get_package_share_directory('pathplanner'),
+        'config',
+        'params.yaml'
+    )
     
     # 声明启动参数
     scan_mode_arg = DeclareLaunchArgument(
@@ -74,23 +83,19 @@ def generate_launch_description():
     )
     
     # 创建ROS2路径规划节点
-    ros2_pathplanner_node = Node(
+    pathplanner_ros2_node = Node(
         package='pathplanner',
-        executable='ros2_pathplanner_node',
-        name='ros2_pathplanner_node',
+        executable='pathplanner_ros2_node',
+        name='pathplanner_ros2_node',
         output='screen',
         parameters=[
+            params_file,  # 加载YAML参数文件
             {
-                'scan_mode': LaunchConfiguration('scan_mode'),
-                'spacing': LaunchConfiguration('spacing'),
-                'shrink_factor': LaunchConfiguration('shrink_factor'),
-                'interpolation_points': LaunchConfiguration('interpolation_points'),
-                'attention_method': LaunchConfiguration('attention_method'),
-                'k_neighbors': LaunchConfiguration('k_neighbors'),
-                'result_dir': LaunchConfiguration('result_dir'),
-                'trigger_mode': LaunchConfiguration('trigger_mode'),
-                'auto_center': LaunchConfiguration('auto_center'),
-                'click_point_topic': LaunchConfiguration('click_point_topic'),
+                # 这些参数会覆盖YAML文件中的值
+                'color_topic': '/color/image_raw',
+                'depth_topic': '/depth/image_raw',
+                'output_3d_path_topic': '/path_planner/path_3d',
+                'output_cartesian_path_topic': '/path_planner/cartesian_path',
             }
         ],
         remappings=[
@@ -112,5 +117,5 @@ def generate_launch_description():
         trigger_mode_arg,
         auto_center_arg,
         click_point_topic_arg,
-        ros2_pathplanner_node
+        pathplanner_ros2_node
     ])

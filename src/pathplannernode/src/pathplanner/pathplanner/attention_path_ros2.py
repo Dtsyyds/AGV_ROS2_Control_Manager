@@ -115,8 +115,8 @@ def extract_masked_roi(original_image, mask, background_color=(0, 0, 0)):
 class InteractiveSegmentationROS2:
     """ROS2 适配的交互式分割与路径规划主类"""
     
-    def __init__(self, depth_path=None, depth_array=None, fx=498.3686770748583, 
-                 fy=501.9355502582987, cx=314.3019441792476, cy=225.6695918834769,
+    def __init__(self, depth_path=None, depth_array=None, fx=578.62, 
+                 fy=578.62, cx=321.15, cy=242.26,
                  model_path=None):
         """
         初始化交互式分割系统 - ROS2 适配版本
@@ -137,7 +137,7 @@ class InteractiveSegmentationROS2:
             # 尝试其他可能的路径
             alt_paths = [
                 os.path.join(self.dir, 'Sam2Model', 'sam2.1_l.pt'),
-                '/home/dts/agv_git/src/pathplannernode/src/pathplanner/sam2model/sam2.1_l.pt',
+                '/home/zyj/Code/ROS2/AGV_new/AGV_ROS2_Control_Manager/src/pathplannernode/src/pathplanner/sam2model/sam2.1_l.pt',
                 './sam2model/sam2.1_l.pt',
             ]
             for alt_path in alt_paths:
@@ -337,6 +337,10 @@ class InteractiveSegmentationROS2:
         
         # 2.生成彩色点云
         print(f"---3正在生成点云---")
+        
+        print(f"   original_image shape: {self.original_image.shape}")
+        print(f"   depth_map shape: {self.depth_map.shape}")
+        print(f"   current_mask shape: {self.current_mask.shape}")
         mask_resized = cv2.resize(self.current_mask.astype(np.float32),
                                   (self.original_image.shape[1], self.original_image.shape[0]))
         self.pointcloud, self.pointcloud_colors = self.pc_processor.mask_depth_to_color_pointcloud(
